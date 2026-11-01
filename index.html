@@ -53,10 +53,11 @@ dialog input{width:100%;padding:11px;border:1px solid #48565d;border-radius:8px;
 </header>
 <section class="search-wrap">
   <div class="eyebrow">BUSCADOR · STARTPAGE</div>
-  <form class="search" action="https://www.startpage.com/sp/search" method="get">
+  <form class="search" action="https://www.startpage.com/do/search" method="get">
+    <input type="hidden" name="prfe" value="86f22efb9d52344cb14122c9362d57d6ac896cacb71f5fc2a9f9dc21b4f49f1fade31dc2e309b3a347a6cdab6adb3f43d359927c51fc6171bee8d42ea03a156c333eae761b292890e5c15f27deaf">
     <input name="query" type="search" placeholder="¿Qué quieres buscar?" aria-label="Buscar en Startpage" required>
     <button type="submit">BUSCAR ↗</button>
-  </form>
+</form>
 </section>
 <section>
   <div class="section-head"><h2>ACCESOS DIRECTOS</h2><button class="action" id="editBtn">⚙ EDITAR</button></div>
