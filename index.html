@@ -91,7 +91,7 @@ function render(){
  tiles.innerHTML="";
  items.forEach((item,i)=>{
   const a=document.createElement("a");a.className="tile";a.href=item.url;a.target="_blank";a.rel="noopener noreferrer";
-  const symbol=document.createElement("span");symbol.className="symbol";symbol.textContent=item.icon||"↗";
+  const symbol=document.createElement("img");symbol.className="symbol";symbol.src="https://www.google.com/s2/favicons?domain="+item.url+"&sz=64";symbol.style.width="32px";symbol.style.height="32px";
   const name=document.createElement("span");name.className="name";name.textContent=item.name;
   a.append(symbol,name);
   a.addEventListener("click",e=>{if(editing){e.preventDefault();openEditor(i)}});
