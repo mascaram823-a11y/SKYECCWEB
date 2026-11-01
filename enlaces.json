@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Google IA",
+    "url": "https://www.google.com/search?udm=50&aep=11&atvm=2",
+    "icon": "🔍"
+  },
+  {
+    "name": "Yandex",
+    "url": "https://yandex.com/",
+    "icon": "🇷🇺"
+  },
+  {
+    "name": "Bing Clean",
+    "url": "https://www.bing.com/search?q=",
+    "icon": "🅱️"
+  },
+  {
+    "name": "YouTube",
+    "url": "https://www.youtube.com",
+    "icon": "▶"
+  }
+]
