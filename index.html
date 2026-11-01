@@ -17,15 +17,15 @@ header{display:flex;justify-content:space-between;align-items:center;gap:20px;ma
 .clock{text-align:right;color:var(--green);font-family:Consolas,monospace;text-shadow:0 0 14px #55ff8370}
 #time{font-size:clamp(23px,4vw,34px);letter-spacing:.06em}
 #date{font-size:12px;color:#b9d8c2;margin-top:5px}
-.search-wrap{max-width:760px;margin:0 auto 48px;text-align:center}
+.search-wrap{max-width:800px;margin:0 auto 48px;text-align:center}
 .eyebrow{font-size:11px;letter-spacing:.28em;color:#b5c0c5;margin-bottom:15px}
-.search{display:flex;padding:7px;background:#111;border:1px solid #333;border-radius:13px;box-shadow:0 12px 35px #0009,inset 0 1px #ffffff16}
+.search{display:flex;padding:7px;background:#111;border:1px solid #333;border-radius:13px;box-shadow:0 12px 35px #0009,inset 0 1px #ffffff16;align-items:center}
 .search input{min-width:0;flex:1;background:transparent;border:0;outline:0;color:white;font-size:17px;padding:13px 15px}
-.search button,.action{border:1px solid #4c8b61;background:#102619;color:#caffd5;border-radius:9px;padding:0 22px;font-weight:bold;cursor:pointer;transition:0.2s}
+.search button,.action{border:1px solid #4c8b61;background:#102619;color:#caffd5;border-radius:9px;padding:0 22px;font-weight:bold;cursor:pointer;transition:0.2s;height:100%}
 .search button:hover,.action:hover{background:#174a29}
 .section-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 17px}
 .section-head h2{font-size:13px;letter-spacing:.2em;color:#c4cdd1;font-weight:600}
-.action{padding:9px 14px;font-size:12px}
+.action{padding:9px 14px;font-size:12px;height:auto}
 
 /* CUADROS MAS PEQUEÑOS Y COMPACTOS */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px}
@@ -58,17 +58,18 @@ dialog input{width:100%;padding:11px;border:1px solid #333;border-radius:8px;bac
 </header>
 <section class="search-wrap">
   <div class="eyebrow">BUSCADOR · STARTPAGE</div>
+  <!-- AQUI ESTA LA LLAVE AL LADO DE BUSCAR -->
   <form class="search" action="https://www.startpage.com/do/search" method="get">
     <input type="hidden" name="prfe" value="86f22efb9d52344cb14122c9362d57d6ac896cacb71f5fc2a9f9dc21b4f49f1fade31dc2e309b3a347a6cdab6adb3f43d359927c51fc6171bee8d42ea03a156c333eae761b292890e5c15f27deaf">
     <input name="query" type="search" placeholder="¿Qué quieres buscar?" aria-label="Buscar en Startpage" required>
-    <button type="submit">BUSCAR ↗</button>
-</form>
+    <button type="submit" style="margin-right:5px;">BUSCAR ↗</button>
+    <button type="button" id="loginBtn" style="display:none; padding:0 15px; font-size:18px;" title="Conectar con GitHub">🔑</button>
+  </form>
 </section>
 <section>
   <div class="section-head">
     <h2>ACCESOS DIRECTOS</h2>
     <div>
-        <button class="action" id="loginBtn" style="display:none;">🔑 CONECTAR</button>
         <button class="action" id="editBtn" style="display:none;">⚙ EDITAR</button>
     </div>
   </div>
@@ -103,20 +104,28 @@ const loginBtn = document.getElementById("loginBtn");
 const editBtn = document.getElementById("editBtn");
 const note = document.getElementById("note");
 
+// NUEVOS ENLACES POR DEFECTO
+const enlacesPorDefecto = [
+    {name:"Google IA",url:"https://www.google.com/search?udm=50&aep=11&atvm=2",icon:"🔍"},
+    {name:"Yandex",url:"https://yandex.com/",icon:"🇷🇺"},
+    {name:"Bing Clean",url:"https://www.bing.com/search?q=",icon:"🅱️"},
+    {name:"YouTube",url:"https://www.youtube.com",icon:"▶"}
+];
+
 async function cargarEnlaces() {
     try {
         const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${GITHUB_FILE}?t=${Date.now()}`);
         if (res.ok) {
             items = await res.json();
+            // Si el archivo está vacío, ponemos los de por defecto
+            if(items.length === 0) items = enlacesPorDefecto;
         } else {
-            items = [
-                {name:"YouTube",url:"https://www.youtube.com",icon:"▶"},
-                {name:"Gemini",url:"https://gemini.google.com",icon:"✦"},
-                {name:"X",url:"https://x.com",icon:"𝕏"},
-                {name:"Gmail",url:"https://mail.google.com",icon:"✉"}
-            ];
+            items = enlacesPorDefecto;
         }
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+        items = enlacesPorDefecto;
+    }
     render();
     verificarEstado();
 }
@@ -157,11 +166,12 @@ function verificarEstado() {
     } else {
         loginBtn.style.display = "inline-block";
         editBtn.style.display = "none";
-        note.textContent = "Pulsa «Conectar» si eres el administrador.";
+        note.textContent = "Pulsa la llave 🔑 si eres el administrador.";
     }
 }
 
-loginBtn.addEventListener("click", () => {
+loginBtn.addEventListener("click", (e) => {
+    e.preventDefault(); // Evita que se envíe el formulario de búsqueda
     const t = prompt("Pega aquí tu Token de GitHub:");
     if (t) {
         token = t.trim();
@@ -176,7 +186,6 @@ function render() {
  items.forEach((item,i)=>{
   const a=document.createElement("a");a.className="tile";a.href=item.url;a.target="_blank";a.rel="noopener noreferrer";
   
-  // ICONO DE 32x32 AUTOMÁTICO
   const symbol=document.createElement("img");symbol.className="symbol";
   symbol.src = "https://www.google.com/s2/favicons?domain="+item.url+"&sz=64";
   symbol.alt = item.name;
