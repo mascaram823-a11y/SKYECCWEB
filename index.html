@@ -14,9 +14,10 @@ main{position:relative;max-width:1050px;margin:auto}
 header{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:5px 0 52px}
 .brand{font-size:clamp(25px,4vw,38px);font-weight:800;letter-spacing:.12em;text-shadow:0 0 18px #55ff8340}
 .brand span{color:var(--green)}
-.clock{text-align:right;color:var(--green);font-family:Consolas,monospace;text-shadow:0 0 14px #55ff8370}
+.clock{text-align:right;color:var(--green);font-family:Consolas,monospace;text-shadow:0 0 14px #55ff8370;cursor:pointer;user-select:none}
 #time{font-size:clamp(23px,4vw,34px);letter-spacing:.06em}
 #date{font-size:12px;color:#b9d8c2;margin-top:5px}
+
 .search-wrap{max-width:800px;margin:0 auto 48px;text-align:center}
 .eyebrow{font-size:11px;letter-spacing:.28em;color:#b5c0c5;margin-bottom:15px}
 .search{display:flex;padding:7px;background:#111;border:1px solid #333;border-radius:13px;box-shadow:0 12px 35px #0009,inset 0 1px #ffffff16;align-items:center}
@@ -27,7 +28,6 @@ header{display:flex;justify-content:space-between;align-items:center;gap:20px;ma
 .section-head h2{font-size:13px;letter-spacing:.2em;color:#c4cdd1;font-weight:600}
 .action{padding:9px 14px;font-size:12px;height:auto}
 
-/* CUADROS MAS PEQUEÑOS Y COMPACTOS */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px}
 .tile{position:relative;min-height:100px;border:1px solid #222;border-radius:10px;background:#0a0a0a;box-shadow:0 4px 12px #0008;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#edf3f4;transition:.18s;padding:10px}
 .tile:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:0 6px 18px #000a,0 0 12px #55ff8320;background:#111}
@@ -54,27 +54,28 @@ dialog input{width:100%;padding:11px;border:1px solid #333;border-radius:8px;bac
 <main>
 <header>
   <div class="brand">SKY<span>ECC</span>WEB</div>
-  <div class="clock"><div id="time">00:00:00</div><div id="date"></div></div>
+  <div class="clock" id="secretClock" title=""><div id="time">00:00:00</div><div id="date"></div></div>
 </header>
+
 <section class="search-wrap">
   <div class="eyebrow">BUSCADOR · STARTPAGE</div>
-  <!-- AQUI ESTA LA LLAVE AL LADO DE BUSCAR -->
   <form class="search" action="https://www.startpage.com/do/search" method="get">
     <input type="hidden" name="prfe" value="86f22efb9d52344cb14122c9362d57d6ac896cacb71f5fc2a9f9dc21b4f49f1fade31dc2e309b3a347a6cdab6adb3f43d359927c51fc6171bee8d42ea03a156c333eae761b292890e5c15f27deaf">
     <input name="query" type="search" placeholder="¿Qué quieres buscar?" aria-label="Buscar en Startpage" required>
-    <button type="submit" style="margin-right:5px;">BUSCAR ↗</button>
-    <button type="button" id="loginBtn" style="display:none; padding:0 15px; font-size:18px;" title="Conectar con GitHub">🔑</button>
+    <button type="submit">BUSCAR ↗</button>
   </form>
 </section>
+
 <section>
   <div class="section-head">
     <h2>ACCESOS DIRECTOS</h2>
     <div>
         <button class="action" id="editBtn" style="display:none;">⚙ EDITAR</button>
+        <button class="action" id="logoutBtn" style="display:none; background:#4a1717; border-color:#8b4c4c; color:#ffd5d5;">SALIR</button>
     </div>
   </div>
   <div class="tiles" id="tiles"></div>
-  <div class="note" id="note">Cargando enlaces...</div>
+  <div class="note" id="note"></div>
 </section>
 <footer>SKYECCWEB · TU PÁGINA DE INICIO</footer>
 </main>
@@ -96,34 +97,66 @@ const GITHUB_FILE = "enlaces.json";
 
 let items = [];
 let editing = false, editIndex = -1;
-let token = localStorage.getItem("gh_token");
+let token = localStorage.getItem("gh_token"); 
 
 const tiles = document.getElementById("tiles");
 const dialog = document.getElementById("editor");
-const loginBtn = document.getElementById("loginBtn");
 const editBtn = document.getElementById("editBtn");
+const logoutBtn = document.getElementById("logoutBtn");
 const note = document.getElementById("note");
 
-// NUEVOS ENLACES POR DEFECTO
-const enlacesPorDefecto = [
-    {name:"Google IA",url:"https://www.google.com/search?udm=50&aep=11&atvm=2",icon:"🔍"},
-    {name:"Yandex",url:"https://yandex.com/",icon:"🇷🇺"},
-    {name:"Bing Clean",url:"https://www.bing.com/search?q=",icon:"🅱️"},
-    {name:"YouTube",url:"https://www.youtube.com",icon:"▶"}
-];
+// --- TRUCO: 3 CLICS EN EL RELOJ ABRE GITHUB ---
+let clickCount = 0;
+document.getElementById("secretClock").addEventListener("click", () => {
+    clickCount++;
+    if (clickCount === 3) {
+        clickCount = 0;
+        
+        // 1. Abrimos GitHub en una pestaña nueva
+        window.open('https://github.com/settings/tokens', '_blank');
+
+        // 2. Le pedimos la llave
+        setTimeout(() => {
+            const t = prompt("Se ha abierto GitHub en otra pestaña.\n\n1. Genera tu Token (o copia uno que ya tengas).\n2. Pega aquí el Token para entrar:");
+            if (t) {
+                token = t.trim();
+                localStorage.setItem("gh_token", token);
+                verificarEstado();
+                cargarEnlaces();
+            }
+        }, 500);
+    }
+    setTimeout(() => { clickCount = 0; }, 1000);
+});
+
+// Verifica si el token es real consultando a GitHub
+async function verificarToken() {
+    if (!token) return false;
+    try {
+        const res = await fetch("https://api.github.com/user", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return res.ok;
+    } catch(e) { return false; }
+}
 
 async function cargarEnlaces() {
+    const isValid = await verificarToken();
+    if (token && !isValid) {
+        // Si el token caducó o es falso, lo borramos
+        token = null;
+        localStorage.removeItem("gh_token");
+    }
+
     try {
         const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${GITHUB_FILE}?t=${Date.now()}`);
         if (res.ok) {
             items = await res.json();
-            // Si el archivo está vacío, ponemos los de por defecto
             if(items.length === 0) items = enlacesPorDefecto;
         } else {
             items = enlacesPorDefecto;
         }
     } catch(e) { 
-        console.error(e); 
         items = enlacesPorDefecto;
     }
     render();
@@ -131,7 +164,7 @@ async function cargarEnlaces() {
 }
 
 async function guardarEnGithub() {
-    if (!token) return alert("Conéctate primero.");
+    if (!token) return alert("No estás conectado.");
     note.textContent = "Guardando en GitHub...";
     
     const getUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
@@ -143,43 +176,44 @@ async function guardarEnGithub() {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-            message: "Actualizar enlaces desde la web",
+            message: "Actualizar enlaces",
             content: btoa(unescape(encodeURIComponent(JSON.stringify(items, null, 2)))),
             sha: sha ? sha : undefined
         })
     });
 
     if (putRes.ok) {
-        note.textContent = "¡Guardado con éxito! Espera 1 minuto para verlo en el servidor.";
-        setTimeout(() => location.reload(), 3000);
+        note.textContent = "¡Guardado con éxito!";
+        setTimeout(() => location.reload(), 1500);
     } else {
         alert("Error al guardar. Revisa tu token.");
-        note.textContent = "Error al guardar.";
+        note.textContent = "";
     }
 }
 
 function verificarEstado() {
     if (token) {
-        loginBtn.style.display = "none";
         editBtn.style.display = "inline-block";
-        note.textContent = "Modo Administrador activado.";
+        logoutBtn.style.display = "inline-block";
     } else {
-        loginBtn.style.display = "inline-block";
         editBtn.style.display = "none";
-        note.textContent = "Pulsa la llave 🔑 si eres el administrador.";
+        logoutBtn.style.display = "none";
     }
 }
 
-loginBtn.addEventListener("click", (e) => {
-    e.preventDefault(); // Evita que se envíe el formulario de búsqueda
-    const t = prompt("Pega aquí tu Token de GitHub:");
-    if (t) {
-        token = t.trim();
-        localStorage.setItem("gh_token", token);
-        verificarEstado();
-        alert("¡Conectado! Ahora puedes editar.");
-    }
+logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("gh_token");
+    token = null;
+    verificarEstado();
+    alert("Has cerrado sesión.");
 });
+
+const enlacesPorDefecto = [
+    {name:"Google IA",url:"https://www.google.com/search?udm=50&aep=11&atvm=2",icon:"🔍"},
+    {name:"Yandex",url:"https://yandex.com/",icon:"🇷🇺"},
+    {name:"Bing Clean",url:"https://www.bing.com/search?q=",icon:"🅱️"},
+    {name:"YouTube",url:"https://www.youtube.com",icon:"▶"}
+];
 
 function render() {
  tiles.innerHTML="";
@@ -188,13 +222,12 @@ function render() {
   
   const symbol=document.createElement("img");symbol.className="symbol";
   symbol.src = "https://www.google.com/s2/favicons?domain="+item.url+"&sz=64";
-  symbol.alt = item.name;
   
   const name=document.createElement("span");name.className="name";name.textContent=item.name;
   a.append(symbol,name);
   
   a.addEventListener("click",e=>{if(editing){e.preventDefault();openEditor(i)}});
-  const remove=document.createElement("button");remove.className="remove";remove.type="button";remove.textContent="×";remove.title="Eliminar";
+  const remove=document.createElement("button");remove.className="remove";remove.type="button";remove.textContent="×";
   remove.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();items.splice(i,1);guardarEnGithub()});
   a.append(remove);tiles.append(a);
  });
@@ -204,7 +237,7 @@ function render() {
 
 function openEditor(i){
     editIndex=i;
-    document.getElementById("formTitle").textContent=i<0?"Añadir acceso directo":"Editar acceso directo";
+    document.getElementById("formTitle").textContent=i<0?"Añadir acceso":"Editar acceso";
     const item=i<0?{name:"",url:"https://",icon:""}:items[i];
     document.getElementById("tileName").value=item.name;
     document.getElementById("tileUrl").value=item.url;
