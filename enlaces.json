@@ -18,5 +18,9 @@
     "name": "YouTube",
     "url": "https://www.youtube.com",
     "icon": "▶"
+  },
+  {
+    "name": "sport",
+    "url": "https://www.sport.es/es/"
   }
 ]
