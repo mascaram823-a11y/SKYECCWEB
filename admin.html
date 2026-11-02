@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de Enlaces - SKYECCWEB</title>
+<style>
+body{background:#000;color:#fff;font-family:Arial;padding:20px;max-width:600px;margin:auto}
+h2{color:#55ff83}
+label{display:block;margin-top:15px;font-size:14px;color:#aaa}
+input,button{width:100%;padding:12px;margin:5px 0;border-radius:8px;border:1px solid #333;background:#111;color:#fff;box-sizing:border-box;font-size:16px}
+button{background:#102619;color:#caffd5;border-color:#4c8b61;cursor:pointer;font-weight:bold;margin-top:20px}
+button:hover{background:#174a29}
+.item{background:#111;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;border-radius:8px;border:1px solid #222}
+.del{background:#4a1717;color:#ffd5d5;border:1px solid #8b4c4c;width:auto;padding:6px 12px;margin:0;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<h2>Panel de Enlaces</h2>
+<p style="font-size:12px;color:#888;">Añade o borra enlaces aquí. Se guardarán en tu GitHub automáticamente.</p>
+
+<label>Nombre (Ej. Netflix):</label>
+<input type="text" id="nombre" placeholder="Nombre de la web">
+<label>Dirección web:</label>
+<input type="text" id="url" placeholder="https://...">
+<button onclick="añadir()">➕ Añadir Enlace</button>
+
+<h3 style="margin-top:40px;">Enlaces actuales:</h3>
+<div id="lista"></div>
+
+<script>
+const USER = "mascaram823-a11y";
+const REPO = "SKYECCWEB";
+const FILE = "enlaces.json";
+let items = [];
+
+// Cargar los enlaces actuales
+async function cargar() {
+    const res = await fetch(`https://raw.githubusercontent.com/${USER}/${REPO}/main/${FILE}?t=${Date.now()}`);
+    if(res.ok) { items = await res.json(); } else { items = []; }
+    render();
+}
+
+// Mostrar la lista en pantalla
+function render() {
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+    items.forEach((item, i) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<span><b>${item.name}</b><br><small style="color:#888">${item.url}</small></span>`;
+        const btn = document.createElement("button");
+        btn.className = "del"; btn.textContent = "Borrar";
+        btn.onclick = () => { items.splice(i, 1); guardar(); };
+        div.appendChild(btn);
+        lista.appendChild(div);
+    });
+}
+
+// Añadir un enlace nuevo
+function añadir() {
+    const name = document.getElementById("nombre").value.trim();
+    let url = document.getElementById("url").value.trim();
+    if(!name || !url) return alert("Rellena ambos campos.");
+    if(!url.startsWith("http")) url = "https://" + url;
+    
+    items.push({name: name, url: url});
+    document.getElementById("nombre").value = "";
+    document.getElementById("url").value = "";
+    guardar();
+}
+
+// Guardar en GitHub (La magia)
+async function guardar() {
+    let t = localStorage.getItem("gh_token");
+    if (!t) {
+        t = prompt("Pega tu Token de GitHub (solo lo pedirá esta vez):");
+        if (!t) return;
+        localStorage.setItem("gh_token", t.trim());
+    }
+
+    const getUrl = `https://api.github.com/repos/${USER}/${REPO}/contents/${FILE}`;
+    const getRes = await fetch(getUrl, { headers: { Authorization: `Bearer ${t}` } });
+    let sha = getRes.ok ? (await getRes.json()).sha : undefined;
+
+    const putRes = await fetch(getUrl, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+            message: "Actualizar enlaces desde el panel",
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(items, null, 2)))),
+            sha: sha
+        })
+    });
+
+    if(putRes.ok) {
+        alert("¡Guardado en GitHub! Ve a tu web y pulsa F5 para verlo.");
+        cargar();
+    } else {
+        alert("Error al guardar. Revisa tu Token.");
+    }
+}
+
+cargar();
+</script>
+</body>
+</html>
