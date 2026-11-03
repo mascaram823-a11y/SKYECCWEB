@@ -18,5 +18,9 @@
     "name": "YouTube",
     "url": "https://www.youtube.com",
     "icon": "▶"
+  },
+  {
+    "name": "Dogpile",
+    "url": "https://www.dogpile.com/"
   }
 ]
