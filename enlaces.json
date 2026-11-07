@@ -23,5 +23,9 @@
     "name": "Dogpile",
     "url": "https://www.dogpile.com/",
     "icon": "↗"
+  },
+  {
+    "name": "Quant",
+    "url": "https://www.qwant.com/?theme=1&hti=0&s=0"
   }
 ]
